@@ -1,13 +1,21 @@
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
-import TodoItem from './components/TodoItem'
 import { dummyData } from './data/todos'
 import AddTodoForm from './components/AddTodoForm'
 import TodoList from './components/TodoList'
+import TodosSummary from './components/TodosSummary'
+import { Todo } from './data/types'
 
 function App() {
-  const [todos, setTodos] = useState(dummyData);
+  const [todos, setTodos] = useState(() => {
+    const savedTodos : Todo[] = JSON.parse(localStorage.getItem("todos") || "[]");
+    return savedTodos.length > 0 ? savedTodos : dummyData  
+  });
+
+  useEffect(() => {
+      localStorage.setItem("todos", JSON.stringify(todos));
+  }, [todos])
 
   function setCompleted(id: number, completed: boolean){
     setTodos((prevTodos) => 
@@ -20,7 +28,7 @@ function App() {
   function addTodo(title: string) {
     setTodos(prevTodos => [
       {
-        id: prevTodos.length + 1,
+        id: Date.now(),
         title,
         completed: false
       },
@@ -28,7 +36,15 @@ function App() {
     ])
   }
 
-
+  function deleteTodo(id: number){
+    setTodos(prevTodos => prevTodos.filter(todo => todo.id
+      !== id
+    ))
+  }
+  
+  function deleteAllCompletedTodos() {
+    setTodos(prevTodos => prevTodos.filter(todo => !todo.completed))
+  }
   return (
     <main className='py-10 h-screen flex flex-col w-full space-y-5'>
     <h1 className='font-bold text-center'>Your Todos</h1>
@@ -38,11 +54,13 @@ function App() {
       <TodoList
       todos={todos}
       onCompletedChange={setCompleted}
-      onDelete={}/>
+      onDelete={deleteTodo}/>
       <div className='space-y-2'>
         
       </div>
     </div>
+    <TodosSummary todos={todos}
+    deleteAllCompleted={deleteAllCompletedTodos}/>
     </main>
   )
 }
